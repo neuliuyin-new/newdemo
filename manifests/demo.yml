@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: newdemo-config
+  namespace: default
+data:
+  NEW_FEATURE: "true1"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newdemo
+  namespace: default
+  labels:
+    source: demo
+    stack: frontend
+    app: newdemo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      source: demo
+      app: newdemo
+  template:
+    metadata:
+      labels:
+        source: demo
+        app: newdemo
+    spec:
+      containers:
+      - name: primary
+        image: index.docker.io/neuliuyin/nginxdemo
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        envFrom:
+        - configMapRef:
+            name: newdemo-config
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: newdemo
+  namespace: default
+spec:
+  selector:
+    source: demo
+    app: newdemo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
